@@ -1,42 +1,56 @@
-# Импорт встроенной библиотеки для работы веб-сервера
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from src.config import file_contact_html
+import os
+from src.config import file_contact_html  # Убедись, что путь правильный
 
-# Для начала определим настройки запуска
-hostName = "localhost"  # Адрес для доступа по сети
-serverPort = 8080  # Порт для доступа по сети
+hostName = "localhost"
+serverPort = 8080
 
 
 class MyServer(BaseHTTPRequestHandler):
-    """
-    Специальный класс, который отвечает за
-    обработку входящих запросов от клиентов
-    """
     def do_GET(self):
-        """ Метод для обработки входящих GET-запросов
-        """
-        self.send_response(200)  # Отправка кода ответа
-        self.send_header("Content-type", "text/html")  # Отправка типа данных, который будет передаваться
-        self.end_headers()
-        with open(file_contact_html, encoding='utf-8') as f:
-            content = f.read()
-        # Завершение формирования заголовков ответа
-        self.wfile.write(bytes(self.get_web_content, "utf-8"))  # Тело ответа
+        """Обработка GET-запросов"""
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+
+        try:
+            # Проверяем, существует ли HTML-файл
+            if not os.path.exists(file_contact_html):
+                raise FileNotFoundError
+
+            # Читаем содержимое HTML-файла
+            with open(file_contact_html, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Отправляем успешный ответ
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(content.encode("utf-8"))
+
+        except FileNotFoundError:
+            # Если файл не найден – отправляем 404
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"<h1>ZALUPA</h1>")
+
+        except Exception as e:
+            # Ловим другие ошибки
+            print(f"Ошибка сервера: {e}")
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(b"<h1>Oshibka servera</h1>")
 
 
 if __name__ == "__main__":
-    # Инициализация веб-сервера, который будет по заданным параметрах в сети
-    # принимать запросы и отправлять их на обработку специальному классу, который был описан выше
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
+    print(f"Server started at http://{hostName}:{serverPort}")
 
     try:
-        # Cтарт веб-сервера в бесконечном цикле прослушивания входящих запросов
         webServer.serve_forever()
     except KeyboardInterrupt:
-        # Корректный способ остановить сервер в консоли через сочетание клавиш Ctrl + C
         pass
 
-    # Корректная остановка веб-сервера, чтобы он освободил адрес и порт в сети, которые занимал
     webServer.server_close()
     print("Server stopped.")
