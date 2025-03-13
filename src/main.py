@@ -1,42 +1,47 @@
 # Импорт встроенной библиотеки для работы веб-сервера
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from src.config import file_contact_html
+from src.config import file_contact_html  # Убедись, что путь к файлу правильный
 
-# Для начала определим настройки запуска
-hostName = "localhost"  # Адрес для доступа по сети
-serverPort = 8080  # Порт для доступа по сети
-
+# Настройки запуска сервера
+hostName = "localhost"
+serverPort = 8080
 
 class MyServer(BaseHTTPRequestHandler):
     """
-    Специальный класс, который отвечает за
-    обработку входящих запросов от клиентов
+    Обработчик HTTP-запросов
     """
     def do_GET(self):
-        """ Метод для обработки входящих GET-запросов
-        """
-        self.send_response(200)  # Отправка кода ответа
-        self.send_header("Content-type", "text/html")  # Отправка типа данных, который будет передаваться
-        self.end_headers()
-        with open(file_contact_html, encoding='utf-8') as f:
-            content = f.read()
-        # Завершение формирования заголовков ответа
-        self.wfile.write(bytes(self.get_web_content, "utf-8"))  # Тело ответа
+        """ Обработка входящих GET-запросов """
+        self.send_response(200)  # Отправка кода 200 (ОК)
+        self.send_header("Content-type", "text/html; charset=utf-8")  # Указание типа контента
+        self.end_headers()  # Завершение заголовков
 
+        try:
+            # Открываем HTML-файл и читаем его содержимое
+            print(f"Открываю файл: {file_contact_html}")
+            with open(file_contact_html, "r", encoding="utf-8") as f:
+                content = f.read()
+            # Отправляем HTML-контент в ответе
+            self.wfile.write(content.encode("utf-8"))
+        except FileNotFoundError:
+            # Если файл не найден, отправляем сообщение об ошибке
+            self.wfile.write(b"<h1>Zalupa</h1>")
+            print("Ошибка: HTML-файл не найден!")
+        except Exception as e:
+            # Ловим любые другие ошибки и отправляем их клиенту
+            error_message = f"<h1>Ошибка сервера: {e}</h1>"
+            self.wfile.write(error_message.encode("utf-8"))
 
 if __name__ == "__main__":
-    # Инициализация веб-сервера, который будет по заданным параметрах в сети
-    # принимать запросы и отправлять их на обработку специальному классу, который был описан выше
+    # Запуск веб-сервера
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
+    print(f"Server started at http://{hostName}:{serverPort}")
 
     try:
-        # Cтарт веб-сервера в бесконечном цикле прослушивания входящих запросов
         webServer.serve_forever()
     except KeyboardInterrupt:
-        # Корректный способ остановить сервер в консоли через сочетание клавиш Ctrl + C
         pass
 
-    # Корректная остановка веб-сервера, чтобы он освободил адрес и порт в сети, которые занимал
+    # Остановка сервера
     webServer.server_close()
     print("Server stopped.")
