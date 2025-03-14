@@ -9,7 +9,7 @@ PORT = 8080
 # Путь к HTML-файлу
 HTML_FILE = "contact.html"
 
-# URL удаленного репозитория (замени на свой)
+# URL удаленного репозитория
 REMOTE_HTML_URL = "https://raw.githubusercontent.com/AlexeyYanchenkov/DZ_Verstka/main/contact.html"
 
 class MyServer(BaseHTTPRequestHandler):
@@ -18,7 +18,7 @@ class MyServer(BaseHTTPRequestHandler):
 
         # Если HTML-файла нет – скачиваем
         if not os.path.exists(HTML_FILE):
-            print(f"Файл {HTML_FILE} не найден. Скачиваем из репозитория...")
+            print(f"Файл {HTML_FILE} не найден. Скачиваем из репозитория.")
             try:
                 urllib.request.urlretrieve(REMOTE_HTML_URL, HTML_FILE)
                 print(f"Файл {HTML_FILE} успешно загружен!")
