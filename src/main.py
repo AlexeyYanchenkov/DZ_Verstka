@@ -1,56 +1,58 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
-from src.config import file_contact_html  # Убедись, что путь правильный
+import urllib.request
 
-hostName = "localhost"
-serverPort = 8080
+# Настройки сервера
+HOST = "localhost"
+PORT = 8080
 
+# Путь к HTML-файлу
+HTML_FILE = "contact.html"
+
+# URL удаленного репозитория (замени на свой)
+REMOTE_HTML_URL = "https://raw.githubusercontent.com/AlexeyYanchenkov/DZ_Verstka/main/contact.html"
 
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        """Обработка GET-запросов"""
-        if self.path == "/favicon.ico":
-            self.send_response(204)
-            self.end_headers()
-            return
+        """Обработка всех GET-запросов, возвращает contact.html"""
+
+        # Если HTML-файла нет – скачиваем
+        if not os.path.exists(HTML_FILE):
+            print(f"Файл {HTML_FILE} не найден. Скачиваем из репозитория...")
+            try:
+                urllib.request.urlretrieve(REMOTE_HTML_URL, HTML_FILE)
+                print(f"Файл {HTML_FILE} успешно загружен!")
+            except Exception as e:
+                print(f"Ошибка загрузки HTML-файла: {e}")
+                self.send_error(500, "Ошибка сервера")
+                return
 
         try:
-            # Проверяем, существует ли HTML-файл
-            if not os.path.exists(file_contact_html):
-                raise FileNotFoundError
-
-            # Читаем содержимое HTML-файла
-            with open(file_contact_html, "r", encoding="utf-8") as f:
+            # Читаем HTML-файл
+            with open(HTML_FILE, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Отправляем успешный ответ
+            # Отправляем ответ
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(content.encode("utf-8"))
 
         except FileNotFoundError:
-            # Если файл не найден – отправляем 404
-            self.send_response(404)
-            self.end_headers()
-            self.wfile.write(b"<h1>ZALUPA</h1>")
+            self.send_error(404, "Файл не найден")
 
         except Exception as e:
-            # Ловим другие ошибки
             print(f"Ошибка сервера: {e}")
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(b"<h1>Oshibka servera</h1>")
-
+            self.send_error(500, "Ошибка сервера")
 
 if __name__ == "__main__":
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print(f"Server started at http://{hostName}:{serverPort}")
+    server = HTTPServer((HOST, PORT), MyServer)
+    print(f"Сервер запущен: http://{HOST}:{PORT}")
 
     try:
-        webServer.serve_forever()
+        server.serve_forever()
     except KeyboardInterrupt:
         pass
 
-    webServer.server_close()
-    print("Server stopped.")
+    server.server_close()
+    print("Сервер остановлен.")
